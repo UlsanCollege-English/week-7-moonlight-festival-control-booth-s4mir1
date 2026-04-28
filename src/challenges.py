@@ -85,8 +85,12 @@ def top_k_festival_alerts(alerts: list[tuple[int, str]], k: int) -> list[str]:
     """
     if k <= 0:
         return []
-    # nsmallest handles k > len(alerts) gracefully (returns all elements).
-    return [title for _, title in heapq.nsmallest(k, alerts)]
+    # Inject the original index as a tiebreaker so that alerts with the same
+    # priority are returned in insertion order (stable).  nsmallest alone does
+    # not guarantee this because it may compare title strings arbitrarily when
+    # priorities are equal.
+    indexed = [(priority, i, title) for i, (priority, title) in enumerate(alerts)]
+    return [title for _, _, title in heapq.nsmallest(k, indexed)]
 
 
 def peek_next_festival_alert(alerts: list[tuple[int, str]]) -> str | None:
